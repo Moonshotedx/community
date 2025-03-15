@@ -1874,12 +1874,9 @@ en-GB:
   terms_of_service:
     title: Terms of Service
   themes:
-    mastodon-bird-ui-dark: Dark (Bird UI)
-    mastodon-bird-ui-light: Light (Bird UI)
-    mastodon-bird-ui-contrast: High Contrast (Bird UI)
-    mastodon-dark: Dark
-    mastodon-light: Light
-    contrast: High Contrast (Mastodon Default)
+    contrast: Mastodon (High contrast)
+    default: Mastodon (Dark)
+    mastodon-light: Mastodon (Light)
     system: Automatic (use system theme)
   time:
     formats:
