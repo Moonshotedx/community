@@ -1874,9 +1874,10 @@ en-GB:
   terms_of_service:
     title: Terms of Service
   themes:
-    contrast: Mastodon (High contrast)
-    default: Mastodon (Dark)
-    mastodon-light: Mastodon (Light)
+    contrast: High contrast
+    default: Dark
+    dark: Dark
+    light: Light
     system: Automatic (use system theme)
   time:
     formats:
