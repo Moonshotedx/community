@@ -160,8 +160,17 @@ jobs:
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         run: |
+          # Get tags from metadata output, or use 'latest' as fallback
+          TAGS=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          
+          # If no tags found, use a default tag to prevent error
+          if [ -z "$TAGS" ] || [ "$TAGS" = "null" ]; then
+            TAGS="-t latest"
+            echo "No tags specified, using default 'latest' tag"
+          fi
+          
           echo "$PUSH_TO_IMAGES" | xargs -I{} \
-            docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            docker buildx imagetools create $TAGS \
               $(printf '{}@sha256:%s ' *)
 
       - name: Inspect image
