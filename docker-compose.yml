@@ -9,7 +9,7 @@ services:
     networks:
       - internal_network
     healthcheck:
-      test: ['CMD', 'pg_isready', '-U', 'mastodon_production']
+      test: [ 'CMD', 'pg_isready', '-U', 'mastodon_production' ]
     volumes:
       - ./postgres14:/var/lib/postgresql/data
     environment:
@@ -24,7 +24,7 @@ services:
     networks:
       - internal_network
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: [ 'CMD', 'redis-cli', 'ping' ]
     volumes:
       - ./redis:/data
 
@@ -46,11 +46,7 @@ services:
       - external_network
       - internal_network
     healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'curl --silent --fail localhost:9200/_cluster/health || exit 1',
-        ]
+      test: [ 'CMD-SHELL', 'curl --silent --fail localhost:9200/_cluster/health || exit 1' ]
     volumes:
       - ./elasticsearch:/usr/share/elasticsearch/data
     ulimits:
@@ -66,7 +62,7 @@ services:
   web:
     # You can uncomment the following line if you want to not use the prebuilt image, for example if you have local code changes
     # build: .
-    image: ghcr.io/mastodon/mastodon:v4.3.6
+    image: ghcr.io/moonshotedx/mastodon
     restart: always
     env_file: .env.production
     command: bundle exec puma -C config/puma.rb
@@ -75,7 +71,7 @@ services:
       - internal_network
     healthcheck:
       # prettier-ignore
-      test: ['CMD-SHELL',"curl -s --noproxy localhost localhost:3000/health | grep -q 'OK' || exit 1"]
+      test: [ 'CMD-SHELL', "curl -s --noproxy localhost localhost:3000/health | grep -q 'OK' || exit 1" ]
     ports:
       - '3000:3000'
     depends_on:
@@ -90,7 +86,7 @@ services:
     # build:
     #   dockerfile: ./streaming/Dockerfile
     #   context: .
-    image: ghcr.io/mastodon/mastodon-streaming:v4.3.6
+    image: ghcr.io/moonshotedx/mastodon-streaming
     restart: always
     env_file: .env.production
     command: node ./streaming/index.js
@@ -99,7 +95,7 @@ services:
       - internal_network
     healthcheck:
       # prettier-ignore
-      test: ['CMD-SHELL', "curl -s --noproxy localhost localhost:4000/api/v1/streaming/health | grep -q 'OK' || exit 1"]
+      test: [ 'CMD-SHELL', "curl -s --noproxy localhost localhost:4000/api/v1/streaming/health | grep -q 'OK' || exit 1" ]
     ports:
       - '4000:4000'
     depends_on:
@@ -109,7 +105,7 @@ services:
   sidekiq:
     # You can uncomment the following line if you want to not use the prebuilt image, for example if you have local code changes
     # build: .
-    image: ghcr.io/mastodon/mastodon:v4.3.6
+    image: ghcr.io/moonshotedx/mastodon
     restart: always
     env_file: .env.production
     command: bundle exec sidekiq
@@ -122,7 +118,7 @@ services:
     volumes:
       - ./public/system:/mastodon/public/system
     healthcheck:
-      test: ['CMD-SHELL', "ps aux | grep '[s]idekiq\ 6' || false"]
+      test: [ 'CMD-SHELL', "ps aux | grep '[s]idekiq 6' || false" ]
 
 networks:
   external_network:

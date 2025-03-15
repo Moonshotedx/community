@@ -1,8 +1,19 @@
 name: Build container release images
 on:
-  push:
-    branches:
-      - 'community'
+  workflow_dispatch:
+    inputs:
+      tag_as_latest:
+        description: 'Tag this build as latest?'
+        type: boolean
+        default: true
+      build_streaming:
+        description: 'Build streaming image?'
+        type: boolean
+        default: true
+      custom_tag:
+        description: 'Optional custom tag (leave empty to use "dev")'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -17,15 +28,17 @@ jobs:
         ghcr.io/moonshotedx/mastodon
       # Do not use cache when building releases, so apt update is always ran and the release always contain the latest packages
       cache: false
-      # Always use latest tag for community branch
+      # Use latest tag based on user input
       flavor: |
-        latest=true
+        latest=${{ inputs.tag_as_latest }}
       tags: |
-        type=raw,value=latest
+        ${{ inputs.tag_as_latest && 'type=raw,value=latest' || '' }}
+        type=raw,value=${{ inputs.custom_tag != '' && inputs.custom_tag || 'dev' }}
         type=sha,format=short
     secrets: inherit
 
   build-image-streaming:
+    if: ${{ inputs.build_streaming }}
     uses: ./.github/workflows/build-container-image.yml
     with:
       file_to_build: streaming/Dockerfile
@@ -33,10 +46,11 @@ jobs:
         ghcr.io/moonshotedx/mastodon-streaming
       # Do not use cache when building releases, so apt update is always ran and the release always contain the latest packages
       cache: false
-      # Always use latest tag for community branch
+      # Use latest tag based on user input
       flavor: |
-        latest=true
+        latest=${{ inputs.tag_as_latest }}
       tags: |
-        type=raw,value=latest
+        ${{ inputs.tag_as_latest && 'type=raw,value=latest' || '' }}
+        type=raw,value=${{ inputs.custom_tag != '' && inputs.custom_tag || 'dev' }}
         type=sha,format=short
     secrets: inherit
