@@ -2503,6 +2503,9 @@ body.embed .detailed-status__meta .detailed-status__link .fa-retweet,
   height: 24px;
   width: 24px;
 }
+.search__icon {
+  position: static;
+}
 
 .layout-single-column .search .search__icon .icon {
   inset-inline-start: unset;
