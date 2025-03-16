@@ -94,13 +94,43 @@ module User::Omniauthable
 
     def user_params_from_auth(email, auth)
       strategy = Devise.omniauth_configs[auth.provider.to_sym].strategy
-
-      display_name = if strategy.respond_to?(:options) && strategy.options[:display_name_claim].present?
-                       display_name_claim = strategy.options[:display_name_claim]
-                       auth.info.try(display_name_claim)
-                     else
-                       auth.info.full_name || auth.info.name || [auth.info.first_name, auth.info.last_name].join(' ')
-                     end
+      Rails.logger.info("Auth provider: #{auth.provider}")
+      Rails.logger.info("Strategy: #{strategy.class.name}")
+      Rails.logger.info("Strategy responds to options: #{strategy.respond_to?(:options)}")
+      
+      if strategy.respond_to?(:options)
+        Rails.logger.info("Strategy options: #{strategy.options.inspect}")
+        Rails.logger.info("Display name claim present: #{strategy.options[:display_name_claim].present?}")
+        
+        if strategy.options[:display_name_claim].present?
+          display_name_claim = strategy.options[:display_name_claim]
+          Rails.logger.info("Display name claim: #{display_name_claim}")
+          
+          raw_info_value = auth.extra.try(:raw_info).try(display_name_claim)
+          Rails.logger.info("Value from auth.extra.raw_info.#{display_name_claim}: #{raw_info_value.inspect}")
+          
+          info_value = auth.info.try(display_name_claim)
+          Rails.logger.info("Value from auth.info.#{display_name_claim}: #{info_value.inspect}")
+          
+          display_name = raw_info_value || info_value
+        else
+          Rails.logger.info("Auth info full_name: #{auth.info.full_name.inspect}")
+          Rails.logger.info("Auth info name: #{auth.info.name.inspect}")
+          Rails.logger.info("Auth info first_name: #{auth.info.first_name.inspect}")
+          Rails.logger.info("Auth info last_name: #{auth.info.last_name.inspect}")
+          
+          display_name = auth.info.full_name || auth.info.name || [auth.info.first_name, auth.info.last_name].join(' ')
+        end
+      else
+        Rails.logger.info("Auth info full_name: #{auth.info.full_name.inspect}")
+        Rails.logger.info("Auth info name: #{auth.info.name.inspect}")
+        Rails.logger.info("Auth info first_name: #{auth.info.first_name.inspect}")
+        Rails.logger.info("Auth info last_name: #{auth.info.last_name.inspect}")
+        
+        display_name = auth.info.full_name || auth.info.name || [auth.info.first_name, auth.info.last_name].join(' ')
+      end
+      
+      Rails.logger.info("Final display_name: #{display_name.inspect}")
 
       {
         email: email || "#{TEMP_EMAIL_PREFIX}-#{auth.uid}-#{auth.provider}.com",
