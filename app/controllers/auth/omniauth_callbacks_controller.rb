@@ -18,6 +18,10 @@ class Auth::OmniauthCallbacksController < Devise::OmniauthCallbacksController
         redirect_to new_user_registration_url
       end
     rescue ActiveRecord::RecordInvalid
+      Rails.logger.error "OmniAuth user creation failed for provider: #{@provider}"
+      Rails.logger.error "User attributes: #{@user.attributes.inspect}" if @user
+      Rails.logger.error "Error message: #{e.message}"
+      Rails.logger.error "Backtrace: #{e.backtrace.join("\n")}"
       flash[:alert] = I18n.t('devise.failure.omniauth_user_creation_failure') if is_navigational_format?
       redirect_to new_user_session_url
     end
