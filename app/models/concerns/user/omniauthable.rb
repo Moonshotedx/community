@@ -97,7 +97,7 @@ module User::Omniauthable
 
       display_name = if strategy.respond_to?(:options) && strategy.options[:display_name_claim].present?
                        display_name_claim = strategy.options[:display_name_claim]
-                       auth.extra.try(:raw_info).try(display_name_claim) || auth.info.try(display_name_claim)
+                       auth.info.try(display_name_claim)
                      else
                        auth.info.full_name || auth.info.name || [auth.info.first_name, auth.info.last_name].join(' ')
                      end
