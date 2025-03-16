@@ -22,7 +22,7 @@ class Auth::OmniauthCallbacksController < Devise::OmniauthCallbacksController
         session["devise.#{provider}_data"] = request.env['omniauth.auth']
         redirect_to new_user_registration_url
       end
-    rescue ActiveRecord::RecordInvalid
+    rescue ActiveRecord::RecordInvalid => e
       Rails.logger.error "OmniAuth user creation failed for provider: #{@provider}"
       Rails.logger.error "User attributes: #{@user.attributes.inspect}" if @user
       Rails.logger.error "Error message: #{e.message}"
