@@ -7,6 +7,11 @@ class Auth::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   def self.provides_callback_for(provider)
     define_method provider do
       @provider = provider
+
+      auth = request.env['omniauth.auth']
+
+      Rails.logger.info "OmniAuth data received from provider #{@provider}: #{auth.inspect}"
+
       @user = User.find_for_omniauth(request.env['omniauth.auth'], current_user)
 
       if @user.persisted?
