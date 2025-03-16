@@ -93,58 +93,36 @@ module User::Omniauthable
     end
 
     def user_params_from_auth(email, auth)
-      Rails.logger.info("Auth provider: #{auth.provider}")
-      
-      display_name_claim = nil
       display_name = nil
       
-      # Get the provider config properly through Devise
       provider_config = Devise.omniauth_configs[auth.provider.to_sym]
-      Rails.logger.info("Provider config: #{provider_config.inspect}")
+      display_name_claim = nil
       
-      if provider_config.present?
-        # For OpenID Connect, the display_name_claim is in the options
-        if auth.provider == 'openid_connect' && provider_config.options.is_a?(Hash)
-          display_name_claim = provider_config.options[:display_name_claim]
-          Rails.logger.info("Display name claim from provider config: #{display_name_claim}")
-        end
+      if provider_config.present? && provider_config.options.is_a?(Hash)
+        display_name_claim = provider_config.options[:display_name_claim]
       end
       
       if display_name_claim.present?
-        # Try to extract the claim value from different possible locations
         if auth.extra.respond_to?(:raw_info) && auth.extra.raw_info.present?
           if auth.extra.raw_info.respond_to?(display_name_claim)
             display_name = auth.extra.raw_info.send(display_name_claim)
-            Rails.logger.info("Found display_name via method call on raw_info: #{display_name}")
           elsif auth.extra.raw_info.respond_to?(:[]) 
             display_name = auth.extra.raw_info[display_name_claim.to_s] || auth.extra.raw_info[display_name_claim.to_sym]
-            Rails.logger.info("Found display_name via hash access on raw_info: #{display_name}")
           end
         end
         
-        # If not found in raw_info, try info
         if display_name.blank? && auth.info.present?
           if auth.info.respond_to?(display_name_claim)
             display_name = auth.info.send(display_name_claim)
-            Rails.logger.info("Found display_name via method call on info: #{display_name}")
           elsif auth.info.respond_to?(:[])
             display_name = auth.info[display_name_claim.to_s] || auth.info[display_name_claim.to_sym]
-            Rails.logger.info("Found display_name via hash access on info: #{display_name}")
           end
         end
       end
       
-      # If no display_name found yet, fall back to standard fields
       if display_name.blank?
-        Rails.logger.info("Auth info full_name: #{auth.info.full_name.inspect}")
-        Rails.logger.info("Auth info name: #{auth.info.name.inspect}")
-        Rails.logger.info("Auth info first_name: #{auth.info.first_name.inspect}")
-        Rails.logger.info("Auth info last_name: #{auth.info.last_name.inspect}")
-        
         display_name = auth.info.full_name || auth.info.name || [auth.info.first_name, auth.info.last_name].join(' ')
       end
-      
-      Rails.logger.info("Final display_name: #{display_name.inspect}")
 
       {
         email: email || "#{TEMP_EMAIL_PREFIX}-#{auth.uid}-#{auth.provider}.com",
