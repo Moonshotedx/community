@@ -93,35 +93,49 @@ module User::Omniauthable
     end
 
     def user_params_from_auth(email, auth)
-      strategy = Devise.omniauth_configs[auth.provider.to_sym].strategy
       Rails.logger.info("Auth provider: #{auth.provider}")
-      Rails.logger.info("Strategy: #{strategy.class.name}")
-      Rails.logger.info("Strategy responds to options: #{strategy.respond_to?(:options)}")
       
-      if strategy.respond_to?(:options)
-        Rails.logger.info("Strategy options: #{strategy.options.inspect}")
-        Rails.logger.info("Display name claim present: #{strategy.options[:display_name_claim].present?}")
-        
-        if strategy.options[:display_name_claim].present?
-          display_name_claim = strategy.options[:display_name_claim]
-          Rails.logger.info("Display name claim: #{display_name_claim}")
-          
-          raw_info_value = auth.extra.try(:raw_info).try(display_name_claim)
-          Rails.logger.info("Value from auth.extra.raw_info.#{display_name_claim}: #{raw_info_value.inspect}")
-          
-          info_value = auth.info.try(display_name_claim)
-          Rails.logger.info("Value from auth.info.#{display_name_claim}: #{info_value.inspect}")
-          
-          display_name = raw_info_value || info_value
-        else
-          Rails.logger.info("Auth info full_name: #{auth.info.full_name.inspect}")
-          Rails.logger.info("Auth info name: #{auth.info.name.inspect}")
-          Rails.logger.info("Auth info first_name: #{auth.info.first_name.inspect}")
-          Rails.logger.info("Auth info last_name: #{auth.info.last_name.inspect}")
-          
-          display_name = auth.info.full_name || auth.info.name || [auth.info.first_name, auth.info.last_name].join(' ')
+      display_name_claim = nil
+      display_name = nil
+      
+      # Get the provider config properly through Devise
+      provider_config = Devise.omniauth_configs[auth.provider.to_sym]
+      Rails.logger.info("Provider config: #{provider_config.inspect}")
+      
+      if provider_config.present?
+        # For OpenID Connect, the display_name_claim is in the options
+        if auth.provider == 'openid_connect' && provider_config.options.is_a?(Hash)
+          display_name_claim = provider_config.options[:display_name_claim]
+          Rails.logger.info("Display name claim from provider config: #{display_name_claim}")
         end
-      else
+      end
+      
+      if display_name_claim.present?
+        # Try to extract the claim value from different possible locations
+        if auth.extra.respond_to?(:raw_info) && auth.extra.raw_info.present?
+          if auth.extra.raw_info.respond_to?(display_name_claim)
+            display_name = auth.extra.raw_info.send(display_name_claim)
+            Rails.logger.info("Found display_name via method call on raw_info: #{display_name}")
+          elsif auth.extra.raw_info.respond_to?(:[]) 
+            display_name = auth.extra.raw_info[display_name_claim.to_s] || auth.extra.raw_info[display_name_claim.to_sym]
+            Rails.logger.info("Found display_name via hash access on raw_info: #{display_name}")
+          end
+        end
+        
+        # If not found in raw_info, try info
+        if display_name.blank? && auth.info.present?
+          if auth.info.respond_to?(display_name_claim)
+            display_name = auth.info.send(display_name_claim)
+            Rails.logger.info("Found display_name via method call on info: #{display_name}")
+          elsif auth.info.respond_to?(:[])
+            display_name = auth.info[display_name_claim.to_s] || auth.info[display_name_claim.to_sym]
+            Rails.logger.info("Found display_name via hash access on info: #{display_name}")
+          end
+        end
+      end
+      
+      # If no display_name found yet, fall back to standard fields
+      if display_name.blank?
         Rails.logger.info("Auth info full_name: #{auth.info.full_name.inspect}")
         Rails.logger.info("Auth info name: #{auth.info.name.inspect}")
         Rails.logger.info("Auth info first_name: #{auth.info.first_name.inspect}")
