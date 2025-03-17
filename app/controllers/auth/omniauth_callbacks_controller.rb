@@ -7,11 +7,6 @@ class Auth::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   def self.provides_callback_for(provider)
     define_method provider do
       @provider = provider
-
-      auth = request.env['omniauth.auth']
-
-      Rails.logger.info "OmniAuth data received from provider #{@provider}: #{auth.inspect}"
-
       @user = User.find_for_omniauth(request.env['omniauth.auth'], current_user)
 
       if @user.persisted?
@@ -22,11 +17,7 @@ class Auth::OmniauthCallbacksController < Devise::OmniauthCallbacksController
         session["devise.#{provider}_data"] = request.env['omniauth.auth']
         redirect_to new_user_registration_url
       end
-    rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "OmniAuth user creation failed for provider: #{@provider}"
-      Rails.logger.error "User attributes: #{@user.attributes.inspect}" if @user
-      Rails.logger.error "Error message: #{e.message}"
-      Rails.logger.error "Backtrace: #{e.backtrace.join("\n")}"
+    rescue ActiveRecord::RecordInvalid
       flash[:alert] = I18n.t('devise.failure.omniauth_user_creation_failure') if is_navigational_format?
       redirect_to new_user_session_url
     end
